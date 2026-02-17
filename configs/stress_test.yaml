@@ -1,0 +1,30 @@
+# ═══════════════════════════════════════════════════════════════
+# Scenario: Stress Test
+# ═══════════════════════════════════════════════════════════════
+# 200 agents with sensor noise and 15% communication dropout.
+# Tests the robustness of decentralized control under realistic
+# degraded conditions. The swarm should maintain cohesion despite
+# imperfect sensing and intermittent link failures.
+# ═══════════════════════════════════════════════════════════════
+
+scenario_name: "stress-test"
+scenario_description: "200 agents with noise and dropout — robustness demo"
+
+num_agents: 200
+epsilon: 80.0
+sigma: 10.0
+target_gain: 1.0
+damping: 2.5
+steps: 400
+dt: 0.06
+
+sensor_noise: 2.0
+dropout_rate: 0.15
+
+world_size: 300.0
+init_spread: 80.0
+
+target_amp_x: 90.0
+target_amp_y: 70.0
+target_freq_x: 0.003
+target_freq_y: 0.005

@@ -1,0 +1,24 @@
+# ═══════════════════════════════════════════════════════════════
+# Scenario: Tight Crystal
+# ═══════════════════════════════════════════════════════════════
+# High epsilon, low sigma — very strong bonds with tight spacing.
+# Produces a beautiful hexagonal lattice that holds together even
+# under strong navigation forces. Demonstrates the minimum-energy
+# geometry of the LJ potential.
+# ═══════════════════════════════════════════════════════════════
+
+scenario_name: "tight-crystal"
+scenario_description: "Strong LJ bonds — stable hexagonal lattice"
+
+num_agents: 50
+epsilon: 150.0
+sigma: 8.0
+target_gain: 0.8
+damping: 3.0
+steps: 600
+dt: 0.06
+
+target_amp_x: 50.0
+target_amp_y: 40.0
+target_freq_x: 0.003
+target_freq_y: 0.004
