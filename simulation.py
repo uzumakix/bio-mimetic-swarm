@@ -7,11 +7,15 @@ coordinate plane. Each vessel uses only local vector math (modified
 Boids + sweep heuristic) to decide its heading. There is no central
 controller.
 
-The simulation tracks a coverage grid to measure how efficiently
-the fleet sweeps the search area over time.
+The simulation uses a two-pass update to avoid order-dependent
+behavior: all agents compute their steering vectors from the
+current state, then all agents apply their updates simultaneously.
 """
 
+import math
+
 import numpy as np
+
 from agents import SearchAgent
 
 
@@ -24,20 +28,20 @@ class SearchSimulation:
     num_agents : int
         Number of autonomous surface vessels.
     grid_size : float
-        Side length of the square search area.
+        Side length of the square search area (meters).
     grid_resolution : float
-        Cell size for coverage tracking.
+        Cell size for coverage tracking (meters).
     max_speed : float
-        Maximum agent speed (units/timestep).
+        Maximum agent speed (meters/timestep).
     perception_radius : float
-        Agent sensing range.
+        Agent sensing range (meters).
     seed : int
         Random seed for reproducibility.
     """
 
-    def __init__(self, num_agents=50, grid_size=200.0,
-                 grid_resolution=5.0, max_speed=2.0,
-                 perception_radius=30.0, seed=42):
+    def __init__(self, num_agents=50, grid_size=400.0,
+                 grid_resolution=5.0, max_speed=1.8,
+                 perception_radius=25.0, seed=42):
         self.grid_size = grid_size
         self.grid_res = grid_resolution
         self.rng = np.random.default_rng(seed)
@@ -50,8 +54,11 @@ class SearchSimulation:
         center = grid_size / 2.0
         self.agents = []
         for i in range(num_agents):
-            offset = self.rng.normal(0, grid_size * 0.04, size=2)
-            pos = np.array([center, center]) + offset
+            offset = self.rng.normal(0, grid_size * 0.03, size=2)
+            pos = np.clip(
+                np.array([center, center]) + offset,
+                0.0, grid_size - 1e-6,
+            )
             heading = self.rng.uniform(0, 2 * np.pi)
             agent = SearchAgent(
                 agent_id=i,
@@ -62,20 +69,40 @@ class SearchSimulation:
             )
             self.agents.append(agent)
 
+        # mark initial cells as visited
+        for agent in self.agents:
+            gx = int(math.floor(agent.pos[0] / grid_resolution))
+            gy = int(math.floor(agent.pos[1] / grid_resolution))
+            if 0 <= gx < grid_cells and 0 <= gy < grid_cells:
+                self.coverage[gy, gx] = 1
+
         self.coverage_history = []
 
     def step(self):
-        """Advance the simulation by one timestep."""
-        for agent in self.agents:
-            agent.update(self.agents, self.coverage, self.grid_res)
+        """
+        Advance the simulation by one timestep.
 
-            # boundary wrapping: keep agents in the search area
-            agent.pos[0] = np.clip(agent.pos[0], 0, self.grid_size)
-            agent.pos[1] = np.clip(agent.pos[1], 0, self.grid_size)
+        Two-pass approach to eliminate order-dependent updates:
+        1. All agents compute steering from the current frozen state.
+        2. All agents apply their updates simultaneously.
+        """
+        # pass 1: compute all steering vectors
+        accels = []
+        for agent in self.agents:
+            accel = agent.compute_steering(
+                self.agents, self.coverage, self.grid_res, self.rng,
+            )
+            accels.append(accel)
+
+        # pass 2: apply all updates
+        for agent, accel in zip(self.agents, accels):
+            agent.apply_steering(
+                accel, self.grid_size, self.coverage, self.grid_res,
+            )
 
     def run(self, num_steps=1000):
         """
-        Run the simulation for num_steps timesteps.
+        Run the full simulation.
 
         Returns
         -------
