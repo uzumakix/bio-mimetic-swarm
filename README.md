@@ -2,7 +2,7 @@
   <img src="results/maritime_banner.jpg" width="720" />
 </p>
 
-# Decentralized Maritime Search Heuristics Engine
+# Multi-Agent Spatial Coverage for Maritime Search
 
 A spatial simulation engine for programming a fleet of autonomous surface vessels (ASVs) to sweep an open ocean grid using only local vector math and no central command. Each vessel computes its heading from neighbor positions and a coverage heuristic. The fleet self-organizes into an efficient search pattern through decentralized coordination alone.
 
